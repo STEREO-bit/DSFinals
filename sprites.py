@@ -3,12 +3,22 @@ import pygame as pg
 import os
 import math
 import random
+from story import *
 from os import path
 vec = pg.math.Vector2
 
 game_folder = ""
 snd_folder = path.join(game_folder, 'snd')
 img_folder = os.path.join(game_folder, "img")
+
+tutorial_text = [["That is a number tile.", "Picking it will be calculated according to your current arithmetic."],
+                 ["That is an arithmetic tile.", "It will change your current addition to multiplication."],
+                 ["Now, try taking that number tile.", ""],
+                 ["Your current score is now 45.", "However, we went over the objective. Let's subtract some numbers."],
+                 ["Taking that number will subtract your", "current score."],
+                 ["Be aware of the mobs on the level you are in!", "You only have three lives, so be cautious!"],
+                 ["Exacting your score to the objective will open the chest", "that will lead you to the next level."],
+                 ["What are you even doing here?", "There's nothing to see here."]]
 
 def collision_with_walls(sprite, group, dir):
         if dir == 'x':
@@ -71,6 +81,7 @@ class Player(pg.sprite.Sprite):
         self.current_sign = '+'
         self.collected_numbers = 0
         self.holding_key = False
+        self.holding_radio = False
         self.vulnerable = True
         self.lives = 3
 
@@ -147,19 +158,25 @@ class Player(pg.sprite.Sprite):
                 snd.play()
                 self.kill()
 
-                if int(self.game.highestlevel[0]) < self.game.level:
-                    self.game.highestlevel[0] = self.game.level
-                    f = open(path.join(game_folder, 'currentlvl'), "w")
-                    f.write(str(f"{self.game.level}"))
-                    f.close()
+                if int(self.game.highestlevel) < self.game.level:
+                    self.game.highestlevel = int(self.game.highestlevel) + 1
+                    self.game.savedata[0] = self.game.level
+                    self.game.save()
 
+                if self.game.level == 8:
+                    self.game.playing = False
+                    self.story = Story(self.game)
+                    self.story.story_loader('epilogue')
+                    self.story.ded_screen("NO_PLAYER_IN_SIMULATION")
+                    return
+                
                 print(f"*****proceeding to next level = {self.game.level}*****")
                 self.game.load_data("lvl\\" + str(self.game.level) + ".tmx")
                 self.game.new()
             else:
                 snd = pg.mixer.Sound(path.join(snd_folder, NOPE))
                 snd.play()
-                print(f"{self.holding_key}")
+                print(f"Key: {self.holding_key}")
             self.on_finish = True
         if not hits and self.on_finish:
             self.on_finish = False
@@ -190,25 +207,38 @@ class Player(pg.sprite.Sprite):
             img = self.lives_img[1]
         if self.lives == 1:
             img = self.lives_img[2]
-        if self.lives > 3 or self.lives < 0:
+        if self.lives == 0:
             img = self.lives_img[3]
+        if self.lives > 3 or self.lives < 0:
+            self.game.anti_cheat()
         img_rect = img.get_rect()
-        img_rect.topleft = (10, 20)
+        img_rect.topleft = (32, 105)
         self.game.screen.blit(img, img_rect)
+
+    def draw_current_score(self):
+        img = self.game.score_hud
+        img_rect = img.get_rect()
+        img_rect.topright = (250, 30)
+        self.game.screen.blit(img, img_rect)
+        if int(self.collected_numbers) == int(self.game.sum):
+            color = GREEN
+        else:
+            color = WHITE
+        self.game.draw_text(str(f"{self.collected_numbers}"), self.game.lcd_font, 35, color, 175, 63, align="e")
 
     def draw_current_sign(self):
         if self.current_sign == '+':
-            img = self.game.arithmetictiles[0]
+            img = self.game.currentarithmetic[0]
         if self.current_sign == '-':
-            img = self.game.arithmetictiles[1]
+            img = self.game.currentarithmetic[1]
         if self.current_sign == 'X':
-            img = self.game.arithmetictiles[2]
+            img = self.game.currentarithmetic[2]
         if self.current_sign == 'D':
-            img = self.game.arithmetictiles[3]
+            img = self.game.currentarithmetic[3]
         img_rect = img.get_rect()
-        img_rect.topleft = (10, HEIGHT - 45)
+        img_rect.topright = (250, 30)
         self.game.screen.blit(img, img_rect) 
-
+    
     def update(self):
         self.animate()
         self.get_keys()
@@ -235,7 +265,6 @@ class Zombie(pg.sprite.Sprite):
         self.current_frame = 0
         self.last_update = 0
         self.load_images()
-        self.facing = "south"
         self.image = game.zombie_stand_frame
 
         self.rect = self.image.get_rect()
@@ -254,13 +283,7 @@ class Zombie(pg.sprite.Sprite):
     def load_images(self):
         self.stand_frame = self.game.zombie_stand_frame
 
-        self.walk_north_frame = self.game.zombie_walk_north_frame
-
-        self.walk_south_frame = self.game.zombie_walk_south_frame
-
-        self.walk_west_frame =  self.game.zombie_walk_west_frame
-
-        self.walk_east_frame =  self.game.zombie_walk_east_frame
+        self.moving_frame = self.game.zombie_moving_frame
 
     def animate(self):
         self.now = pg.time.get_ticks()
@@ -268,21 +291,8 @@ class Zombie(pg.sprite.Sprite):
         if self.moving:
             if self.now - self.last_update > 200:
                 self.last_update = self.now
-                self.current_frame = (self.current_frame + 1) % 4
-                if abs(self.vel.x) > abs(self.vel.y):
-                    if self.vel.x < 0:
-                        self.image = self.walk_west_frame[self.current_frame]
-                        self.facing = "west"
-                    else:
-                        self.image = self.walk_east_frame[self.current_frame]
-                        self.facing = "east"
-                else:
-                    if self.vel.y < 0:
-                        self.image = self.walk_north_frame[self.current_frame]
-                        self.facing = "north"
-                    else:
-                        self.image = self.walk_south_frame[self.current_frame]
-                        self.facing = "south"
+                self.current_frame = (self.current_frame + 1) % 7
+                self.image = self.moving_frame[self.current_frame]
         if not self.moving:
             self.image = self.stand_frame
 
@@ -322,9 +332,7 @@ class Zombie(pg.sprite.Sprite):
             print("invulnerable for 2 seconds.")
             if player.lives == 0:
                 print("ded")
-                self.game.ded_screen("You have been infested with a virus.")
-                self.game.new()
-                
+                self.game.ded_screen("PLAYER_BUGGED_OUT") 
 
     def update(self):
         self.movement()
@@ -335,6 +343,92 @@ class Zombie(pg.sprite.Sprite):
         collision_with_box(self, self.game.boxes, 'x', self.vel.x)
         self.rect.y = self.pos.y
         collision_with_walls(self, self.game.walls, 'y')
+        collision_with_box(self, self.game.boxes, 'y', self.vel.y)
+
+        self.collision_with_player()
+
+class LinearZombie(pg.sprite.Sprite):
+    def __init__(self, game, x, y, dir):
+        self._layer = 2
+        self.groups = game.all_sprites, game.mobs
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+
+        self.current_frame = 0
+        self.last_update = 0
+        self.load_images()
+        self.direction = dir
+        self.image = game.zombie_stand_frame
+
+        self.speed = ZOMBIE_SPEED
+
+        self.rect = self.image.get_rect()
+        self.vel = vec(0, 0)
+        self.pos = vec(x, y)
+        self.last_movement_update = 0
+        self.moving = False
+
+        self.rect.center = self.pos
+
+    def load_images(self):
+        self.stand_frame = self.game.zombie_stand_frame
+
+        self.moving_frame = self.game.zombie_moving_frame
+
+    def animate(self):
+        self.now = pg.time.get_ticks()
+        if self.now - self.last_update > 200:
+            self.last_update = self.now
+            self.current_frame = (self.current_frame + 1) % 7
+            self.image = self.moving_frame[self.current_frame]
+            
+    def movement(self):
+        if self.direction == 'x':
+            self.vel.x = self.speed
+        if self.direction == 'y':
+            self.vel.y = self.speed
+
+    def collision_with_walls(self):
+        hits = pg.sprite.spritecollide(self, self.game.walls, False) or pg.sprite.spritecollide(self, self.game.boxes, False)
+        if hits:
+            if self.direction == 'x':
+                if self.vel.x > 0:
+                    self.pos.x = hits[0].rect.left - self.rect.width
+                if self.vel.x < 0:
+                    self.pos.x = hits[0].rect.right
+            if self.direction == 'y':
+                if self.vel.y > 0:
+                    self.pos.y = hits[0].rect.top - self.rect.height
+                if self.vel.y < 0:
+                    self.pos.y = hits[0].rect.bottom
+            self.vel = vec(0, 0)
+            self.speed *= -1
+
+    def collision_with_player(self):
+        player = self.game.player
+
+        now = pg.time.get_ticks()   
+        hits = pg.sprite.collide_rect(self, player)
+        if hits and player.vulnerable:
+            snd = pg.mixer.Sound(path.join(snd_folder, HURT))
+            snd.play()
+            player.vulnerable = False
+            player.last_invulnerable_update = now
+            player.lives -= 1
+            print("invulnerable for 2 seconds.")
+            if player.lives == 0:
+                print("ded")
+                self.game.ded_screen("PLAYER_BUGGED_OUT") 
+
+    def update(self):
+        self.animate()
+        self.movement()
+        self.collision_with_walls()
+        
+        self.pos += self.vel * self.game.dt
+        self.rect.x = self.pos.x
+        collision_with_box(self, self.game.boxes, 'x', self.vel.x)
+        self.rect.y = self.pos.y
         collision_with_box(self, self.game.boxes, 'y', self.vel.y)
 
         self.collision_with_player()
@@ -364,7 +458,6 @@ class Turret(pg.sprite.Sprite):
         self.distance = [0, 0]
         self.displacement = 0
         self.rect.center = self.pos
-        TurretHitbox(game, self.rect)
 
     def fire(self):
         self.now = pg.time.get_ticks()
@@ -377,7 +470,7 @@ class Turret(pg.sprite.Sprite):
                 snd.play()
             self.firing = True
 
-        if self.now - self.last_firing_update > 2000:
+        if self.now - self.last_firing_update > TURRET_COOLDOWN:
             self.last_firing_update = self.now
             self.shots_fired = 0
                 
@@ -397,17 +490,6 @@ class Turret(pg.sprite.Sprite):
 
     def update(self):
         self.fire()
-
-class TurretHitbox(pg.sprite.Sprite):
-    def __init__(self, game,  rect):
-        self.groups = game.all_sprites  
-        pg.sprite.Sprite.__init__(self, self.groups)
-        self.game = game
-        self.image = pg.Surface((12, 13))
-        self.rect = self.image.get_rect()
-
-        self.rect.center = rect.center
-        self.rect.bottom = rect.bottom
 
 class Bullet(pg.sprite.Sprite):
     def __init__(self, game, pos, dir):
@@ -438,8 +520,7 @@ class Bullet(pg.sprite.Sprite):
             print("invulnerable for 2 seconds.")
             if player.lives == 0:
                 print("ded")
-                self.game.ded_screen("You have been shot.")
-                self.game.new()
+                self.game.ded_screen("PLAYER_GOT_SHOT")
 
     def update(self):
         now = pg.time.get_ticks()
@@ -448,7 +529,7 @@ class Bullet(pg.sprite.Sprite):
         self.rect.center = self.pos
         if now - self.spawn_time > BULLET_SPAN:
             self.kill()
-        hits = pg.sprite.spritecollide(self, self.game.walls, False)
+        hits = pg.sprite.spritecollide(self, self.game.walls, False) or pg.sprite.spritecollide(self, self.game.boxes, False)
         if hits:
             self.kill()
         self.collision_with_player()
@@ -484,6 +565,7 @@ class Obstacle(pg.sprite.Sprite):
 
 class Box(pg.sprite.Sprite):
     def __init__(self, game, x, y, name):
+        self._layer = 2
         self.groups = game.all_sprites, game.boxes
         pg.sprite.Sprite.__init__(self, self.groups)
 
@@ -495,39 +577,43 @@ class Box(pg.sprite.Sprite):
         self.pos = vec(x, y)
         self.name = name
 
-    def collision_with_walls(self, dir):
+    def collision_with_box(self, dir, vel):
         if dir == 'x':
-            hits = pg.sprite.spritecollide(self, self.game.walls, False)
-            if hits:
+            hits = pg.sprite.spritecollide(self, self.game.boxes, False)
+            if hits and not hits[0].name == self.name:
+                hits[0].vel.x = vel
                 if self.vel.x > 0:
-                    self.pos.x = hits[0].rect.left - self.rect.width
+                    self.pos.x = hits[0].rect.left - self.rect.width 
                 if self.vel.x < 0:
                     self.pos.x = hits[0].rect.right
-                self.vel.x = 0
                 self.rect.x = self.pos.x
-                print(f"box #{self.name} hits something")
+                self.vel.x = 0
 
         if dir == 'y':
-            hits = pg.sprite.spritecollide(self, self.game.walls, False)
-            if hits:
+            hits = pg.sprite.spritecollide(self, self.game.boxes, False)
+            if hits and not hits[0].name == self.name:
+                hits[0].vel.y = vel
                 if self.vel.y > 0:
                     self.pos.y = hits[0].rect.top - self.rect.height
                 if self.vel.y < 0:
                     self.pos.y = hits[0].rect.bottom
-                self.vel.y = 0
                 self.rect.y = self.pos.y
-                print(f"box #{self.name} hits something")
+                self.vel.x = 0
 
     def update(self):
         self.pos += self.vel * self.game.dt
+        self.vel *= 0.95
         self.rect.x = self.pos.x
         collision_with_walls(self, self.game.walls, 'x')
+        self.collision_with_box('x', self.vel.x)
         self.rect.y = self.pos.y
         collision_with_walls(self, self.game.walls, 'y')
-        self.vel = vec(0, 0)
+        self.collision_with_box('y', self.vel.y)
+        # self.vel = vec(0, 0)
 
 class Chest(pg.sprite.Sprite):
     def __init__(self, game, x, y):
+        self._layer = 2
         self.groups = game.all_sprites, game.walls
         pg.sprite.Sprite.__init__(self, self.groups)
 
@@ -546,12 +632,26 @@ class Key(pg.sprite.Sprite):
         pg.sprite.Sprite.__init__(self, self.groups)
 
         self.game = game
+        self.last_update = 0
 
-        self.image = game.key_img
+        self.load_images()
+        self.image = self.key_frames[0]
+        self.current_frame = 0
         self.rect = self.image.get_rect()
         self.pos = vec(x, y)
         self.rect.x = self.pos.x
         self.rect.y = self.pos.y
+
+    def load_images(self):
+        self.key_frames = self.game.key_frame_img
+
+    def animate(self):
+        now = pg.time.get_ticks()
+
+        if now - self.last_update > 200:
+            self.last_update = now
+            self.current_frame = (self.current_frame + 1) % 4
+            self.image = self.key_frames[self.current_frame]
 
     def collision_with_player(self):
         hits = pg.sprite.collide_rect(self, self.game.player)
@@ -564,6 +664,7 @@ class Key(pg.sprite.Sprite):
             snd.play()
     
     def update(self):
+        self.animate()
         self.collision_with_player()
 
 class Numbers(pg.sprite.Sprite):
@@ -584,7 +685,7 @@ class Numbers(pg.sprite.Sprite):
         hits = pg.sprite.collide_rect(self, self.game.player)
         if hits:
             self.calculate(self.number, self.game.player.current_sign)
-            self.game.gameclock.timer += 5
+            self.game.gameclock.timer += 3
             snd = pg.mixer.Sound(path.join(snd_folder, PICK))
             snd.play()
             self.game.player.check_match()
@@ -602,8 +703,7 @@ class Numbers(pg.sprite.Sprite):
             if number == 0:
                 snd = pg.mixer.Sound(path.join(snd_folder, EXPLODE))
                 snd.play()
-                self.game.ded_screen("The universe has torn apart.")
-                self.game.new()
+                self.game.ded_screen("BLACK_HOLE_DESTRUCTION")
                 return
             self.game.player.collected_numbers = int(self.game.player.collected_numbers/number)
 
@@ -635,7 +735,6 @@ class Sign(pg.sprite.Sprite):
         hits = pg.sprite.collide_rect(self, self.game.player)
         if hits:
             self.game.player.current_sign = self.sign
-            self.game.gameclock.timer += 3
             snd = pg.mixer.Sound(path.join(snd_folder, SIGN))
             snd.play()
             self.kill()
@@ -648,7 +747,6 @@ class Finish(pg.sprite.Sprite):
     def __init__(self, game, x, y):
         self._layer = 1
         self.groups = game.all_sprites, game.finish
-        self._layer
         pg.sprite.Sprite.__init__(self, self.groups)
 
         self.game = game
@@ -657,3 +755,146 @@ class Finish(pg.sprite.Sprite):
         self.pos = vec(x, y)
         self.rect.x = self.pos.x
         self.rect.y = self.pos.y
+
+class Radio(pg.sprite.Sprite):
+    def __init__(self, game, x, y):
+        self._layer = 1
+        self.groups = game.all_sprites
+        pg.sprite.Sprite.__init__(self, self.groups)
+
+        self.game = game
+        if self.game.radio_unlocked == '1':
+            self.image = game.radio_on
+        else:
+            self.image = game.radio_off
+        self.rect = self.image.get_rect()
+        self.pos = vec(x, y)
+        self.distance = [0, 0]
+        self.displacement = 0
+        self.sound = False
+        self.volume = 0
+        self.radius = 200
+        self.rect.x = self.pos.x
+        self.rect.y = self.pos.y
+        self.radiomusic = pg.mixer.Sound(path.join(snd_folder, PORTAL))
+        self.radiomusic.set_volume(self.volume)
+        self.radiomusic.play(loops=-1)
+
+    def collected_radio(self):
+        hits = pg.sprite.collide_rect(self, self.game.player)
+        if hits:
+            snd = pg.mixer.Sound(path.join(snd_folder, RADIOGET))
+            snd.play()
+            self.game.player.holding_radio = True
+            self.kill()
+            self.radiomusic.set_volume(1)
+            print(f"got radio")
+
+    def update(self):
+        self.distance = (self.game.player.pos - self.pos)
+        self.displacement = math.sqrt((self.distance[0] ** 2) + (self.distance[1] ** 2))
+        self.volume = ((self.radius-self.displacement)/2)*0.01
+        
+        if self.displacement < self.radius:
+            self.radiomusic.set_volume(self.volume)
+            if self.sound == False:
+                self.sound = True
+                
+        if self.displacement > self.radius:
+            self.radiomusic.set_volume(0)
+            self.sound = False
+
+        self.collected_radio()
+
+class RadioFinal(pg.sprite.Sprite):
+    def __init__(self, game, x, y):
+        self._layer = 1
+        self.groups = game.all_sprites
+        pg.sprite.Sprite.__init__(self, self.groups)
+
+        self.game = game
+        self.image = game.radio_none
+        self.rect = self.image.get_rect()
+        self.pos = vec(x, y)
+        self.distance = [0, 0]
+        self.displacement = 0
+        self.sound = False
+        self.volume = 0
+        self.radius = 50
+        self.rect.x = self.pos.x
+        self.rect.y = self.pos.y
+        self.radiomusic = pg.mixer.Sound(path.join(snd_folder, MORSE))
+    
+    def update(self):
+        self.distance = (self.game.player.pos - self.pos)
+        self.displacement = math.sqrt((self.distance[0] ** 2) + (self.distance[1] ** 2))
+        self.volume = ((self.radius-self.displacement)+50)*0.01
+        
+        if self.displacement < self.radius and self.game.player.holding_radio:
+            self.radiomusic.set_volume(self.volume)
+            if self.game.savedata[self.game.level + 1] == '0':
+                self.game.savedata[self.game.level + 1] = '1'
+                self.game.save()
+            self.game.radio.radiomusic.fadeout(2)
+            self.game.radio.sound = False
+            self.image = self.game.radio_on
+            if self.sound == False:
+                self.sound = True
+                self.radiomusic.play(loops=-1)  
+                
+        if self.displacement > self.radius:
+            self.radiomusic.stop()
+            self.sound = False
+
+class Tutorial(pg.sprite.Sprite):
+    def __init__(self, game, x, y, id):
+        self._layer = 1
+        self.groups = game.all_sprites, game.tutorial
+        pg.sprite.Sprite.__init__(self, self.groups)
+
+        self.game = game
+        self.image = self.game.tutorial_hitbox
+        self.rect = self.image.get_rect()
+        self.id = id
+        self.on_block = False
+        self.pos = vec(x, y)
+        self.rect.x = self.pos.x
+        self.rect.y = self.pos.y
+    
+    def collision_with_player(self):
+        hits = pg.sprite.collide_rect(self, self.game.player)
+        if hits:
+            if not self.on_block:
+                snd = pg.mixer.Sound(path.join(snd_folder, TUTORIALTIP))
+                snd.play()
+            self.on_block = True
+            self.game.tutorial_text.set_id(self.id)
+            self.game.tutorial_text.set_bool(True)
+        
+        if not hits and self.on_block:
+            self.on_block = False
+            self.game.tutorial_text.set_bool(False)
+            self.kill()
+
+    def update(self):
+        self.collision_with_player()
+
+class TutorialText():
+    def __init__(self, game):
+        self.game = game
+        self.id = 0
+        self.show_text = False
+    
+    def show(self):
+        if self.show_text:
+            self.game.draw_text(tutorial_text[self.id][0], self.game.undertale_font, 15, WHITE, WIDTH/2, 435, align="center")
+            self.game.draw_text(tutorial_text[self.id][1], self.game.undertale_font, 15, WHITE, WIDTH/2, 460, align="center")
+
+    def set_id(self, id):
+        self.id = id
+
+    def set_bool(self, condition):
+        self.show_text = condition
+
+    def update(self):
+        self.show()

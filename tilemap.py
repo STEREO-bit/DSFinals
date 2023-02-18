@@ -22,7 +22,7 @@ class TiledMap:
     def makemap(self):
         temp_surface = pg.Surface((self.width, self.height))
         self.render(temp_surface)
-        return temp_surface
+        return temp_surface     
 
 class Camera:
     def __init__(self, width, height):

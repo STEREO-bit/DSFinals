@@ -9,11 +9,37 @@ game_folder = ""
 snd_folder = path.join(game_folder, 'snd')
 img_folder = os.path.join(game_folder, "img")
 
+def collision_with_walls(sprite, group, dir):
+        if dir == 'x':
+            hits = pg.sprite.spritecollide(sprite, group, False)
+            if hits:
+                if sprite.vel.x > 0:
+                    sprite.pos.x = hits[0].rect.left - sprite.rect.width
+                if sprite.vel.x < 0:
+                    sprite.pos.x = hits[0].rect.right
+                sprite.vel.x = 0
+                sprite.rect.x = sprite.pos.x
+                # print(f"{sprite} hits wall #{hits[0].name}")
+
+        if dir == 'y':
+            hits = pg.sprite.spritecollide(sprite, group, False)
+            if hits:
+                if sprite.vel.y > 0:
+                    sprite.pos.y = hits[0].rect.top - sprite.rect.height
+                if sprite.vel.y < 0:
+                    sprite.pos.y = hits[0].rect.bottom
+                sprite.vel.y = 0
+                sprite.rect.y = sprite.pos.y
+
 class LevelLoader():
     def __init__(self, game):
         self.game = game
 
     def level_loader(self):
+        pg.mixer.music.load(path.join(snd_folder, TITLEBGM))
+        pg.mixer.music.play(loops=-1) 
+        pg.mixer.music.set_volume(VOLUME) 
+
         print("picking level...")
         for sprite in self.game.all_sprites:
             sprite.kill()
@@ -22,14 +48,15 @@ class LevelLoader():
         self.level_floor_img = self.level_floor.makemap()
         self.level_floor_rect = self.level_floor_img.get_rect()
         self.game.level_tiles = pg.sprite.Group()
+        self.last_update = 0
+        self.current_frame = 0
 
         level = 0
         for tile_object in self.level_floor.tmxdata.objects:
             if tile_object.name == 'player':
-                self.game.player = LevelPlayer(self.game, tile_object.x, tile_object.y)
+                self.player_level = LevelPlayer(self.game, tile_object.x, tile_object.y)
             if tile_object.name == 'level':
                 Levels(self.game, tile_object.x, tile_object.y, level)
-
                 level += 1
 
         self.game.camera = Camera(self.level_floor.width, self.level_floor.height)
@@ -39,21 +66,44 @@ class LevelLoader():
         self.picking = True
         while self.picking:
             self.draw_level_sprites()
+            self.draw_level_text()
+            self.draw_instructions()
             self.game.clock.tick(FPS)/1000
             pg.display.flip()
             self.game.all_sprites.update()
             for event in pg.event.get():
                 if event.type == pg.QUIT:   
                     self.game.quit()
-
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_F12:
+                        pg.mixer.stop()
+                        self.game.highestlevel = 8
+                        snd = pg.mixer.Sound(path.join(snd_folder, 'unlockall.wav'))
+                        snd.play()   
+                                                                 
     def draw_level_sprites(self):
         self.game.screen.blit(self.level_floor_img, self.game.camera.apply_rect(self.level_floor_rect))
-        self.game.draw_text(f"Select a level.", self.game.title_font, 20, RED, WIDTH/2 , HEIGHT - 100, align="center")
-        if self.game.player.on_block == True:
-            self.game.draw_text(f"Not yet unlocked!", self.game.title_font, 30, RED, WIDTH/2, HEIGHT - 150, align="center")
+        if self.player_level.on_block == True:
+            self.game.draw_text(f"Locked!", self.game.undertale_font, 30, WHITE, WIDTH/2, HEIGHT - 150, align="center")
         for sprite in self.game.all_sprites:
             self.game.screen.blit(sprite.image, self.game.camera.apply(sprite))
 
+    def draw_level_text(self):
+        now = pg.time.get_ticks()
+        if now - self.last_update > 200:
+            self.last_update = now
+            self.current_frame = (self.current_frame + 1) % 8
+        img = self.game.level_frame[self.current_frame]
+        img_rect = img.get_rect()
+        img_rect.center = ((WIDTH/2), 175)
+        self.game.screen.blit(img, img_rect)
+
+    def draw_instructions(self):
+        img = self.game.instructions
+        img_rect = img.get_rect()
+        img_rect.center = (710, 600)
+        self.game.screen.blit(img, img_rect)
+    
 class LevelPlayer(pg.sprite.Sprite):
     def __init__(self, game, x, y):
         self._layer = 2
@@ -83,8 +133,6 @@ class LevelPlayer(pg.sprite.Sprite):
         self.walk_west_frame  = self.game.player_walk_west_frame
 
         self.walk_east_frame  = self.game.player_walk_east_frame 
-
-        self.lives_img        = self.game.player_lives_img
 
     def get_keys(self):
         self.vel = vec(0, 0)
@@ -134,18 +182,24 @@ class LevelPlayer(pg.sprite.Sprite):
     def collision_with_level(self):
         hits = pg.sprite.spritecollide(self, self.game.level_tiles, False)
         if hits:
-            if int(self.game.highestlevel[0]) < hits[0].level and not self.on_block:
+            if int(self.game.highestlevel) < hits[0].level and not self.on_block:
                 self.on_block = True
                 snd = pg.mixer.Sound(path.join(snd_folder, NOPE))
                 snd.play()
+
             elif not self.on_block:
-                self.game.picking = False
+                self.game.levelloader.picking = False
                 self.game.level = hits[0].level
                 print(f"****level {hits[0].level}****")
                 pg.mixer.music.load(path.join(snd_folder, BGM))
                 pg.mixer.music.play(loops=-1) 
                 self.game.new()
+                return
                 
+        if self.on_block:
+            collision_with_walls(self, self.game.level_tiles, 'x')
+            collision_with_walls(self, self.game.level_tiles, 'y')
+
         if not hits:
             self.on_block = False
 
@@ -155,8 +209,8 @@ class LevelPlayer(pg.sprite.Sprite):
         self.pos += self.vel * self.game.dt
         self.rect.x = self.pos.x
         self.rect.y = self.pos.y
-
         self.collision_with_level()
+
 
 class Levels(pg.sprite.Sprite):
     def __init__(self, game, x, y, level):
@@ -166,7 +220,7 @@ class Levels(pg.sprite.Sprite):
 
         self.game = game
         self.level = level
-        self.image = pg.image.load(path.join(img_folder, f'level{self.level}.png'))
+        self.image = game.ports[level]
         self.rect = self.image.get_rect()
         self.pos = vec(x, y)
         self.rect.x = self.pos.x
