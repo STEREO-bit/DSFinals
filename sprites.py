@@ -20,6 +20,13 @@ tutorial_text = [["That is a number tile.", "Picking it will be calculated accor
                  ["Exacting your score to the objective will open the chest", "that will lead you to the next level."],
                  ["What are you even doing here?", "There's nothing to see here."]]
 
+level_5 = [["Wow, I can't see...", "I better check corners for this."], 
+           ["If only I can use the blocks", "as my shield..."]]
+
+level_6 = [["I need 128 first...", ""],
+           ["Next, I think, I need to get down by 88...", ""],
+           ["Great, on the objective...", ""]]
+
 def collision_with_walls(sprite, group, dir):
         if dir == 'x':
             hits = pg.sprite.spritecollide(sprite, group, False)
@@ -165,8 +172,10 @@ class Player(pg.sprite.Sprite):
 
                 if self.game.level == 8:
                     self.game.playing = False
+                    self.vulnerable = False
                     self.story = Story(self.game)
                     self.story.story_loader('epilogue')
+                    self.story.draw_congrats()
                     self.story.ded_screen("NO_PLAYER_IN_SIMULATION")
                     return
                 
@@ -212,7 +221,7 @@ class Player(pg.sprite.Sprite):
         if self.lives > 3 or self.lives < 0:
             self.game.anti_cheat()
         img_rect = img.get_rect()
-        img_rect.topleft = (32, 105)
+        img_rect.bottomright = (WIDTH - 20, HEIGHT - 20)
         self.game.screen.blit(img, img_rect)
 
     def draw_current_score(self):
@@ -278,7 +287,7 @@ class Zombie(pg.sprite.Sprite):
         self.rotation = 0
         self.distance = [0, 0]
         self.displacement = 0
-        self.rect.center = self.pos
+        self.rect.topleft  = self.pos
 
     def load_images(self):
         self.stand_frame = self.game.zombie_stand_frame
@@ -466,6 +475,7 @@ class Turret(pg.sprite.Sprite):
 
         if self.displacement < self.radius:
             if not self.firing:
+                self.shots_fired = 2
                 snd = pg.mixer.Sound(path.join(snd_folder, DETECT))
                 snd.play()
             self.firing = True
@@ -536,7 +546,7 @@ class Bullet(pg.sprite.Sprite):
 
 class Flashlight(pg.sprite.Sprite):
     def __init__(self, game, x, y):
-        self._layer = 3
+        self._layer = 4
         self.groups = game.all_sprites
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
@@ -887,8 +897,15 @@ class TutorialText():
     
     def show(self):
         if self.show_text:
-            self.game.draw_text(tutorial_text[self.id][0], self.game.undertale_font, 15, WHITE, WIDTH/2, 435, align="center")
-            self.game.draw_text(tutorial_text[self.id][1], self.game.undertale_font, 15, WHITE, WIDTH/2, 460, align="center")
+            if self.game.level == 0:
+                self.game.draw_text(tutorial_text[self.id][0], self.game.undertale_font, 15, WHITE, WIDTH/2, 435, align="center")
+                self.game.draw_text(tutorial_text[self.id][1], self.game.undertale_font, 15, WHITE, WIDTH/2, 460, align="center")
+            if self.game.level == 5:
+                self.game.draw_text(level_5[self.id][0], self.game.undertale_font, 15, WHITE, WIDTH/2, 435, align="center")
+                self.game.draw_text(level_5[self.id][1], self.game.undertale_font, 15, WHITE, WIDTH/2, 460, align="center")
+            if self.game.level == 6:
+                self.game.draw_text(level_6[self.id][0], self.game.undertale_font, 15, WHITE, WIDTH/2, 435, align="center")
+                self.game.draw_text(level_6[self.id][1], self.game.undertale_font, 15, WHITE, WIDTH/2, 460, align="center")
 
     def set_id(self, id):
         self.id = id

@@ -18,7 +18,8 @@ GREEN = (0,255,0)
 BLUE = (0,0,255)
 WIN10BLUE = (0,120,215)
 ORANGE = (255,165,0)
-GREY = (155,155,155)
+YELLOW = (255,255,0)
+GREY = (50,50,50)
 
 # Tile Size
 TILESIZE = 64
@@ -163,6 +164,8 @@ PORT_4 = "port_4.png"
 PORT_5 = "port_5.png"
 PORT_6 = "port_6.png"
 PORT_7 = "port_7.png"
+PORT_SECRET = "port_8.png"
+
 
 INSTRUCTIONS = "instructions.png"
 

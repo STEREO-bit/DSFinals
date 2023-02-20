@@ -56,6 +56,7 @@ class Game:
                 self.savedata.append(0)
             f.close()
         print(self.savedata)
+        self.savedata
         self.highestlevel = self.savedata[0]
 
     # Load every single image in one go.
@@ -177,7 +178,8 @@ class Game:
                             pg.image.load(path.join(img_folder, PORT_4)),
                             pg.image.load(path.join(img_folder, PORT_5)),
                             pg.image.load(path.join(img_folder, PORT_6)),
-                            pg.image.load(path.join(img_folder, PORT_7))]
+                            pg.image.load(path.join(img_folder, PORT_7)),
+                            pg.image.load(path.join(img_folder, PORT_SECRET)),]
 
         self.tutorial_hitbox = pg.image.load(path.join(img_folder, TUTORIAL))
 
@@ -248,7 +250,7 @@ class Game:
         has_player = False
         has_chest = False
         has_finish = False
-        tutorial_level = False
+        self.tutorial_level = False
         self.has_radio = False
 
         for tile_object in self.map.tmxdata.objects:
@@ -287,7 +289,7 @@ class Game:
             if tile_object.name == 'tutorial':
                 Tutorial(self, tile_object.x, tile_object.y, tutorial_id)
                 tutorial_id += 1
-                tutorial_level = True
+                self.tutorial_level = True
             if tile_object.name == 'flashlight':
                 self.flashlight = Flashlight(self, tile_object.x, tile_object.y)
             if tile_object.name in self.symbols:
@@ -301,7 +303,7 @@ class Game:
             self.throw_exception(f"ChestObjectException: No chest object has been provided on {self.level}.tmx.")
         if not has_finish:
             self.throw_exception(f"FinishObjectException: No finish object has been provided on {self.level}.tmx.")
-        if tutorial_level:
+        if self.tutorial_level:
             self.tutorial_text = TutorialText(self)
         self.gameclock = GameClock(self, int(self.seconds.strip()))
         self.camera = Camera(self.map.width, self.map.height)
@@ -344,7 +346,7 @@ class Game:
         self.player.draw_current_sign()
         self.draw_objective()
         self.gameclock.draw_clock()
-        if self.level == 0:
+        if self.tutorial_level:
             self.tutorial_text.show()
         if self.player.on_finish == True:
             self.draw_text("You don't have the key!", self.undertale_font, 50, RED, WIDTH/2, HEIGHT/2, align="center")
@@ -393,16 +395,8 @@ class Game:
             if event.type == pg.QUIT:
                 self.quit()
             if event.type == pg.KEYDOWN:
-                if event.key == pg.K_SPACE:
+                if event.key == pg.K_SPACE or event.key == pg.K_ESCAPE:
                     self.pause_screen()
-                if event.key == pg.K_n:
-                    self.level += 1
-                    print(f"****next level = {self.level}****")
-                    self.new()
-                if event.key == pg.K_b:
-                    self.level -= 1
-                    print(f"****previous level = {self.level}****")
-                    self.new()
                 if event.key == pg.K_END:
                     self.ded_screen("GOD_IS_MERCILESS")
 
@@ -420,35 +414,7 @@ class Game:
         self.draw_text("Discrete Structures II", self.undertale_font, 15, WHITE, WIDTH/2, HEIGHT - 55, align="center") 
         pg.display.flip()
 
-    # Display the Ded Screen (Windows 9x BSOD)
-    # def ded_screen(self, reason):
-    #     pg.mixer.music.stop()
-    #     if self.has_radio:
-    #         self.radio.radiomusic.stop()
-
-    #     snd = pg.mixer.Sound(path.join(snd_folder, BSOD))
-    #     snd.play()
-    #     print("ded screen showed")
-
-    #     self.screen.fill(BLUE)
-    #     square = pg.Surface((100, 20))
-    #     square.fill(WHITE)
-    #     square_rect = square.get_rect()
-    #     square_rect.center = ((WIDTH/2), (HEIGHT/2 - 100))
-    #     self.screen.blit(square, square_rect)
-    #     self.draw_text("GLaDOS", self.undertale_font, 20, BLUE, WIDTH/2, HEIGHT/2 - 100, align="center")
-    #     self.draw_text(f"A fatal exception has occured at level {self.level}. The current player", self.undertale_font, 20, WHITE, 30, 275, align="w")    
-    #     self.draw_text(f"will be terminated.", self.undertale_font, 20, WHITE, 30, 300, align="w")    
-    #     self.draw_text(f"Stop code: {reason}", self.undertale_font, 20, WHITE, 30, 365, align="w")    
-    #     self.draw_text("Press SPACE to retry the level.", self.undertale_font, 20, WHITE, WIDTH/2, 450, align="center")  
-    #     self.draw_text("Press ESC to reboot.", self.undertale_font, 20, WHITE, WIDTH/2, 475, align="center")  
-    #     pg.display.flip()
-    #     self.wait_for_key()
-
-    #     snd.stop()
-    #     pg.mixer.music.load(path.join(snd_folder, BGM))
-    #     pg.mixer.music.play(loops=-1) 
-
+    # Display the Ded Screen (Windows 10 BSOD)
     def ded_screen(self, reason):
         self.playing = False
         pg.mixer.music.stop()

@@ -58,6 +58,11 @@ class LevelLoader():
             if tile_object.name == 'level':
                 Levels(self.game, tile_object.x, tile_object.y, level)
                 level += 1
+        sum = 0
+        for total in self.game.savedata:
+            sum += int(total)
+        if sum == 16:
+            Levels(self.game, 570, 50, 8)
 
         self.game.camera = Camera(self.level_floor.width, self.level_floor.height)
         self.level_load_update_loop()
@@ -74,12 +79,6 @@ class LevelLoader():
             for event in pg.event.get():
                 if event.type == pg.QUIT:   
                     self.game.quit()
-                if event.type == pg.KEYDOWN:
-                    if event.key == pg.K_F12:
-                        pg.mixer.stop()
-                        self.game.highestlevel = 8
-                        snd = pg.mixer.Sound(path.join(snd_folder, 'unlockall.wav'))
-                        snd.play()   
                                                                  
     def draw_level_sprites(self):
         self.game.screen.blit(self.level_floor_img, self.game.camera.apply_rect(self.level_floor_rect))
@@ -138,13 +137,13 @@ class LevelPlayer(pg.sprite.Sprite):
         self.vel = vec(0, 0)
         keys = pg.key.get_pressed()
         if keys[pg.K_LEFT] or keys[pg.K_a]:
-            self.vel.x = -PLAYER_SPEED
+            self.vel.x = -200
         if keys[pg.K_RIGHT] or keys[pg.K_d]:
-            self.vel.x = PLAYER_SPEED
+            self.vel.x = 200
         if keys[pg.K_UP] or keys[pg.K_w]:
-            self.vel.y = -PLAYER_SPEED
+            self.vel.y = -200
         if keys[pg.K_DOWN] or keys[pg.K_s]:
-            self.vel.y = PLAYER_SPEED
+            self.vel.y = 200
 
     def animate(self):
         now = pg.time.get_ticks()

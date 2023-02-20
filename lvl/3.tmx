@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="50" height="30" tilewidth="64" tileheight="64" infinite="0" nextlayerid="18" nextobjectid="123">
+<map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="50" height="30" tilewidth="64" tileheight="64" infinite="0" nextlayerid="18" nextobjectid="131">
  <tileset firstgid="1" source="../img/final_tilemap.tsx"/>
  <tileset firstgid="226" source="../img/lvl3_bg.tsx"/>
+ <tileset firstgid="1850" source="../img/final_tilemap_2.tsx"/>
  <layer id="1" name="Background" width="50" height="30">
   <data encoding="csv">
 228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274,275,276,277,
@@ -375,7 +376,15 @@
    <object id="118" name="+" x="1416" y="456" width="48" height="48"/>
    <object id="119" name="X" x="1416" y="520" width="48" height="48"/>
    <object id="121" name="zombiex" x="2688" y="448" width="59" height="64"/>
-   <object id="122" name="zombiex" x="1088" y="512" width="59" height="64"/>
+   <object id="122" name="zombiex" x="1152" y="512" width="59" height="64"/>
+   <object id="123" name="zombiex" x="1536" y="512" width="59" height="64"/>
+   <object id="124" name="zombiex" x="2304" y="448" width="59" height="64"/>
+   <object id="125" name="radio" x="2766" y="911.943" width="32" height="32.115"/>
+   <object id="126" name="radiofinal" x="848.303" y="913.579" width="32" height="32.115"/>
+   <object id="127" name="block" x="1838" y="367.5" width="32" height="32"/>
+   <object id="128" name="block" x="1456" y="932" width="32" height="32"/>
+   <object id="129" name="block" x="2063.33" y="1006.67" width="32" height="32"/>
+   <object id="130" name="block" x="1838.67" y="680" width="32" height="32"/>
   </objectgroup>
  </group>
 </map>
