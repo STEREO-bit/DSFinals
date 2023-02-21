@@ -306,7 +306,7 @@ class Game:
             self.throw_exception(f"FinishObjectException: No finish object has been provided on {self.level}.tmx.")
         if self.tutorial_level:
             self.tutorial_text = TutorialText(self)
-            
+
         self.gameclock = GameClock(self, int(self.seconds.strip()))
         self.camera = Camera(self.map.width, self.map.height)
         self.run()
@@ -399,11 +399,6 @@ class Game:
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_SPACE or event.key == pg.K_ESCAPE:
                     self.pause_screen()
-                if event.key == pg.K_F5:
-                    self.player.collected_numbers = self.sum
-                    self.player.check_match()
-                if event.key == pg.K_l:
-                    self.player.lives = 3
                 if event.key == pg.K_END:
                     self.ded_screen("GOD_IS_MERCILESS")
 

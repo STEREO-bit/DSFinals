@@ -83,11 +83,6 @@ class LevelLoader():
             for event in pg.event.get():
                 if event.type == pg.QUIT:   
                     self.game.quit()
-                if event.type == pg.KEYDOWN:
-                    if event.key == pg.K_F5:
-                        self.game.highestlevel = 8
-                        snd = pg.mixer.Sound(path.join(snd_folder, 'unlockall.wav'))
-                        snd.play()
 
     # Draws the sprites                                                        
     def draw_level_sprites(self):
