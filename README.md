@@ -4,7 +4,7 @@ A game about a developer who has fallen on the digital world to solve his confli
 
 # Developing 
 ```
-git clone https://github.com/lezzthanthree/DSFinals.git
+git clone https://github.com/lezzthanthree/BugTIMERush.git
 ```
 
 This also needs pytmx  and pygame package to compile the game.
