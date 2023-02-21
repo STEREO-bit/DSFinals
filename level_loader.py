@@ -9,6 +9,7 @@ game_folder = ""
 snd_folder = path.join(game_folder, 'snd')
 img_folder = os.path.join(game_folder, "img")
 
+# Checks for collisions for walls
 def collision_with_walls(sprite, group, dir):
         if dir == 'x':
             hits = pg.sprite.spritecollide(sprite, group, False)
@@ -34,7 +35,8 @@ def collision_with_walls(sprite, group, dir):
 class LevelLoader():
     def __init__(self, game):
         self.game = game
-
+    
+    # Loads the Level Stage
     def level_loader(self):
         pg.mixer.music.load(path.join(snd_folder, TITLEBGM))
         pg.mixer.music.play(loops=-1) 
@@ -50,11 +52,12 @@ class LevelLoader():
         self.game.level_tiles = pg.sprite.Group()
         self.last_update = 0
         self.current_frame = 0
+        self.game.all_sprites.empty()
 
         level = 0
         for tile_object in self.level_floor.tmxdata.objects:
             if tile_object.name == 'player':
-                self.player_level = LevelPlayer(self.game, tile_object.x, tile_object.y)
+                self.player = LevelPlayer(self.game, tile_object.x, tile_object.y)
             if tile_object.name == 'level':
                 Levels(self.game, tile_object.x, tile_object.y, level)
                 level += 1
@@ -67,6 +70,7 @@ class LevelLoader():
         self.game.camera = Camera(self.level_floor.width, self.level_floor.height)
         self.level_load_update_loop()
 
+    # Update Loop for the Level Stage
     def level_load_update_loop(self):
         self.picking = True
         while self.picking:
@@ -79,14 +83,21 @@ class LevelLoader():
             for event in pg.event.get():
                 if event.type == pg.QUIT:   
                     self.game.quit()
-                                                                 
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_F5:
+                        self.game.highestlevel = 8
+                        snd = pg.mixer.Sound(path.join(snd_folder, 'unlockall.wav'))
+                        snd.play()
+
+    # Draws the sprites                                                        
     def draw_level_sprites(self):
         self.game.screen.blit(self.level_floor_img, self.game.camera.apply_rect(self.level_floor_rect))
-        if self.player_level.on_block == True:
+        if self.player.on_block == True:
             self.game.draw_text(f"Locked!", self.game.undertale_font, 30, WHITE, WIDTH/2, HEIGHT - 150, align="center")
         for sprite in self.game.all_sprites:
             self.game.screen.blit(sprite.image, self.game.camera.apply(sprite))
 
+    # Draws the Level Animation, text
     def draw_level_text(self):
         now = pg.time.get_ticks()
         if now - self.last_update > 200:
@@ -97,11 +108,14 @@ class LevelLoader():
         img_rect.center = ((WIDTH/2), 175)
         self.game.screen.blit(img, img_rect)
 
+    # Draws the WASD/Arrow Keys
     def draw_instructions(self):
         img = self.game.instructions
         img_rect = img.get_rect()
         img_rect.center = (710, 600)
         self.game.screen.blit(img, img_rect)
+    
+
     
 class LevelPlayer(pg.sprite.Sprite):
     def __init__(self, game, x, y):
@@ -192,6 +206,7 @@ class LevelPlayer(pg.sprite.Sprite):
                 print(f"****level {hits[0].level}****")
                 pg.mixer.music.load(path.join(snd_folder, BGM))
                 pg.mixer.music.play(loops=-1) 
+                self.vel *= 0
                 self.game.new()
                 return
                 
@@ -210,7 +225,6 @@ class LevelPlayer(pg.sprite.Sprite):
         self.rect.y = self.pos.y
         self.collision_with_level()
 
-
 class Levels(pg.sprite.Sprite):
     def __init__(self, game, x, y, level):
         self._layer = 1
@@ -224,3 +238,4 @@ class Levels(pg.sprite.Sprite):
         self.pos = vec(x, y)
         self.rect.x = self.pos.x
         self.rect.y = self.pos.y
+

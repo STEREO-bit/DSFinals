@@ -3,12 +3,14 @@ import pytmx
 from settings import *
 
 class TiledMap:
+    # Initilizes the dimensions of the map
     def __init__(self, filename):
         tm = pytmx.load_pygame(filename, pixelalpha=True) 
         self.width = tm.width * tm.tilewidth
         self.height = tm.height * tm.tileheight
         self.tmxdata = tm
 
+    # Render the map per tile
     def render(self, surface):
         ti = self.tmxdata.get_tile_image_by_gid
         for layer in self.tmxdata.visible_layers:
@@ -18,7 +20,8 @@ class TiledMap:
                     if tile:
                         surface.blit(tile, (x * self.tmxdata.tileheight, 
                                             y * self.tmxdata.tilewidth))
-    
+
+    # Return the whole map and display to the screen
     def makemap(self):
         temp_surface = pg.Surface((self.width, self.height))
         self.render(temp_surface)
@@ -31,12 +34,15 @@ class Camera:
         self.width = width
         self.height = height
 
+    # Apply the camera to the player
     def apply(self, entity):
         return entity.rect.move(self.camera.topleft)
 
+    # Move the camera when the player moves
     def apply_rect(self, rect):
         return rect.move(self.camera.topleft)
 
+    # Update the position of the camera
     def update(self, target):
         x = -target.rect.x + int(WIDTH/2)
         y = -target.rect.y + int(HEIGHT/2)

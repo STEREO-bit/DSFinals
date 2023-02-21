@@ -27,6 +27,7 @@ level_6 = [["I need 128 first...", ""],
            ["Next, I think, I need to get down by 88...", ""],
            ["Great, on the objective...", ""]]
 
+# Checks for collisions of walls
 def collision_with_walls(sprite, group, dir):
         if dir == 'x':
             hits = pg.sprite.spritecollide(sprite, group, False)
@@ -50,6 +51,7 @@ def collision_with_walls(sprite, group, dir):
                 sprite.rect.y = sprite.pos.y
                 # print(f"{sprite} hits wall #{hits[0].name}")
 
+# Checks for collisions of boxes
 def collision_with_box(sprite, group, dir, vel):
         if dir == 'x':
             hits = pg.sprite.spritecollide(sprite, group, False)

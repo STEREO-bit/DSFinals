@@ -22,6 +22,8 @@ class Game:
         pg.mixer.init()
         pg.font.init()
         pg.mixer.music.set_volume(VOLUME)
+        icon = pg.image.load(path.join(img_folder, "icon.png"))
+        pg.display.set_icon(icon)
         self.undertale_font = path.join(img_folder, UNDERTALEFONT)
         self.lcd_font = path.join(img_folder, LCDFONT)
         self.screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -119,7 +121,6 @@ class Game:
                                         pg.image.load(path.join(img_folder, CROSS)), 
                                         pg.image.load(path.join(img_folder, OBELUS))]
         
-
         self.numbertiles            =  [pg.image.load(path.join(img_folder, ZERO)), 
                                         pg.image.load(path.join(img_folder, ONE)), 
                                         pg.image.load(path.join(img_folder, TWO)), 
@@ -305,6 +306,7 @@ class Game:
             self.throw_exception(f"FinishObjectException: No finish object has been provided on {self.level}.tmx.")
         if self.tutorial_level:
             self.tutorial_text = TutorialText(self)
+            
         self.gameclock = GameClock(self, int(self.seconds.strip()))
         self.camera = Camera(self.map.width, self.map.height)
         self.run()
@@ -351,6 +353,7 @@ class Game:
         if self.player.on_finish == True:
             self.draw_text("You don't have the key!", self.undertale_font, 50, RED, WIDTH/2, HEIGHT/2, align="center")
 
+    # Draws the GUI for the objective
     def draw_objective(self):
         img = self.objective_hud
         img_rect = img.get_rect()
@@ -363,7 +366,6 @@ class Game:
         self.draw_text("Objective", self.undertale_font, 12, WHITE, 30, 560, align="w")
         self.draw_text(str(f"{self.sum}"), self.lcd_font, 25, color, 155, 593, align="e")
 
-    
     # This creates and draws texts
     def draw_text(self, text, font_name, size, color, x, y, align="nw"):
         font = pg.font.Font(font_name, size)    
@@ -397,9 +399,15 @@ class Game:
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_SPACE or event.key == pg.K_ESCAPE:
                     self.pause_screen()
+                if event.key == pg.K_F5:
+                    self.player.collected_numbers = self.sum
+                    self.player.check_match()
+                if event.key == pg.K_l:
+                    self.player.lives = 3
                 if event.key == pg.K_END:
                     self.ded_screen("GOD_IS_MERCILESS")
 
+    # Displays the loading screen
     def loading_screen(self):
         self.dim_screen = pg.Surface(self.screen.get_size()).convert_alpha()
         self.dim_screen.fill((0,0,0,200))
@@ -410,7 +418,7 @@ class Game:
         bug_rect.center = ((WIDTH/2), (HEIGHT/2) - 50)
         self.screen.blit(bug, bug_rect)
         self.draw_text("L O A D I N G . . .", self.undertale_font, 20, WHITE, WIDTH/2, HEIGHT/2 + 25, align="center") 
-        self.draw_text("Sleepy Developers Inc. (C) 2023", self.undertale_font, 15, WHITE, WIDTH/2, HEIGHT - 75, align="center") 
+        self.draw_text("Sleepy Developers (C) 2023", self.undertale_font, 15, WHITE, WIDTH/2, HEIGHT - 75, align="center") 
         self.draw_text("Discrete Structures II", self.undertale_font, 15, WHITE, WIDTH/2, HEIGHT - 55, align="center") 
         pg.display.flip()
 
@@ -532,6 +540,7 @@ class Game:
             f.write(f"{data}\n")
         f.close()
     
+    # Detects if the player's lives are below 0, above 3, or if the clock is below -1
     def anti_cheat(self):
         import ctypes
         pg.mixer.music.stop()

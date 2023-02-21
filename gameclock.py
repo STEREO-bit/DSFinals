@@ -12,6 +12,7 @@ class GameClock:
         self.last_update = self.now
         self.timer = timer
 
+    # Clock Ticks
     def tick(self):
         self.now = pg.time.get_ticks()
 
@@ -28,6 +29,7 @@ class GameClock:
         if self.timer < -1: 
             self.game.anti_cheat()
 
+    # Draws the clock on the screen
     def draw_clock(self):
         img = self.game.timer_hud
         img_rect = img.get_rect()
@@ -35,5 +37,6 @@ class GameClock:
         self.game.screen.blit(img, img_rect)
         self.game.draw_text(str("{:.1f}".format(self.timer)), self.game.lcd_font, 25, WHITE, 700, 55, align="center")
 
+    # Update the clock every 0.1 seconds.
     def update(self):
         self.tick()

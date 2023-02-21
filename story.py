@@ -25,6 +25,7 @@ class Story():
         self.story_line = []
         self.file_name = ""
 
+    # Load the story
     def story_loader(self, story):
         if story == "prologue":
             self.story_line = prologue
@@ -33,12 +34,15 @@ class Story():
             self.story_line = epilogue
             self.file_name = "epilogue"
 
+        pg.mixer.stop()
         pg.mixer.music.load(path.join(snd_folder, f'{self.file_name}.ogg'))
+        pg.mixer.music.set_volume(VOLUME)
         pg.mixer.music.play()
 
         self.draw_story()
         self.story_update_loop()
 
+    # Update loop
     def story_update_loop(self):
         self.reading = True
         while self.reading:
@@ -53,6 +57,7 @@ class Story():
                         self.current_frame += 1
                         self.draw_story()
 
+    # Draws the story
     def draw_story(self):
         if self.current_frame >= len(self.story_line):
             self.reading = False
@@ -124,16 +129,16 @@ class Story():
                         self.current_frame += 1
                         self.draw_story()
                         return
-                    
-
 
         self.draw_skip()
 
+    # Draws the dialogue when the user skipped
     def draw_skip(self):
         self.game.draw_text(self.story_line[self.current_frame][0], self.game.undertale_font, 30, WHITE, 175, 425, align="w") 
         self.game.draw_text(self.story_line[self.current_frame][1], self.game.undertale_font, 30, WHITE, 175, 465, align="w") 
         self.game.draw_text(self.story_line[self.current_frame][2], self.game.undertale_font, 30, WHITE, 175, 505, align="w") 
 
+    # Draw the congrats section
     def draw_congrats(self):
         # seconds / bpm / scale
         self.delay = 60 / 127 / 0.125
@@ -143,6 +148,7 @@ class Story():
         pg.mixer.music.play(loops=-1)
         self.wait_for_key_credits()
 
+    # Update loop for the credits
     def wait_for_key_credits(self):
         self.rolling = True
         while self.rolling:
@@ -161,8 +167,8 @@ class Story():
                         self.rolling = False
                         self.draw_credits()
                         return
-                    
-    
+
+    # Draws the sections        
     def draw_credits(self):
         if self.beat == 1:
             self.game.screen.fill(BLACK)
@@ -197,7 +203,7 @@ class Story():
         if self.beat == 7:
             self.game.screen.fill(BLACK)
             self.game.draw_text("Programmers", self.game.undertale_font, 30, YELLOW, 80, HEIGHT/2 - 20, align="w")
-            self.game.draw_text("Smilie Pop", self.game.undertale_font, 30, WHITE, 130, HEIGHT/2 + 20, align="w")
+            self.game.draw_text("Genesis Lovino", self.game.undertale_font, 30, WHITE, 130, HEIGHT/2 + 20, align="w")
         if self.beat == 8:
             self.game.screen.fill(BLACK)
             self.game.draw_text("Technicals and Papers", self.game.undertale_font, 30, YELLOW, 80, HEIGHT/2 - 40, align="w")
@@ -256,6 +262,7 @@ class Story():
             pg.display.flip()
             self.wait_for_key_bsod()
 
+    # Draws the ending BSoD
     def ded_screen(self, reason):
         self.game.playing = False
         pg.mixer.music.stop()
@@ -275,7 +282,8 @@ class Story():
         self.wait_for_key_bsod()
 
         raise Exception("PlayerNotFound: The player has escaped the simulation.")
-        
+
+    # Update loop for BSoD   
     def wait_for_key_bsod(self):
         waiting = True
         while waiting:

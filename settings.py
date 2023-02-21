@@ -166,7 +166,6 @@ PORT_6 = "port_6.png"
 PORT_7 = "port_7.png"
 PORT_SECRET = "port_8.png"
 
-
 INSTRUCTIONS = "instructions.png"
 
 TUTORIAL = "tutorial_hitbox.png"

@@ -7,6 +7,7 @@ snd_folder = path.join(game_folder, 'snd')
 img_folder = path.join(game_folder, "img")
 
 class TitleScreen():
+    # Initializes the Title Screen
     def __init__(self, game):
         self.game = game
         self.title_bg = self.game.title_bg
@@ -14,6 +15,7 @@ class TitleScreen():
         self.title_bg_rect.center = ((WIDTH/2), (HEIGHT/2))
         self.game.screen.blit(self.title_bg, self.title_bg_rect)
 
+    # Loads the Title Screen
     def title_loader(self):
         self.game.all_sprites.empty()
         pg.mixer.music.stop()
@@ -28,6 +30,7 @@ class TitleScreen():
         self.wait_for_key()
         self.game.levelloader.level_loader()
 
+    # Waits for the space key
     def wait_for_key(self):
         waiting = True
         while waiting:
